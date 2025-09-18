@@ -1,9 +1,11 @@
-name: Release OSS (APK)
+name: Debug Build (APK)
 
 on:
   push:
-    tags:
-      - v*
+    branches:
+      - main
+      - master
+      - copilot/**
 
   workflow_dispatch:
   
@@ -21,10 +23,8 @@ jobs:
 
       - name: Create Secrets file
         run: |
-          echo "Creating file with interpolated secrets"
-          cat <<EOF > ./lib/constant/secrets.dart
-          ${{ secrets.SECRETS }}
-          EOF
+          echo "Creating debug secrets file from template"
+          cp ./lib/constant/secrets.dart.template ./lib/constant/secrets.dart
 
       - name: Setup Flutter SDK
         uses: flutter-actions/setup-flutter@v4
@@ -57,75 +57,16 @@ jobs:
 
       - uses: SimonMarquis/android-accept-licenses@v1
 
-      - name: Build Release APKs
-        run: flutter build apk --release --split-per-abi
+      - name: Build Debug APKs
+        run: flutter build apk --debug --split-per-abi
 
-      - name: Sign App
-        id: sign_app
-        uses: ilharp/sign-android-release@v2
-        with:
-          releaseDir: build/app/outputs/flutter-apk/
-          signingKey: ${{ secrets.RELEASE_KEYSTORE_BASE64 }}
-          keyAlias: ${{ secrets.RELEASE_SIGNING_ALIAS }}
-          keyStorePassword: ${{ secrets.RELEASE_SIGNING_PASSWORD }}
-          keyPassword: ${{ secrets.RELEASE_SIGNING_PASSWORD }}
-          buildToolsVersion: 34.0.0
-
-      - uses: jungwinter/split@v2
-        id: signed_files
-        with:
-          msg: ${{ steps.sign_app.outputs.signedFiles }}
-          separator: ":"
-
-      - name: Upload Release Build to Artifacts
+      - name: Upload Debug Build to Artifacts
         uses: actions/upload-artifact@v4
         with:
-          name: release-artifacts
+          name: debug-artifacts
           path: |
-            ${{ steps.signed_files.outputs._0 }}
-            ${{ steps.signed_files.outputs._1 }}
-            ${{ steps.signed_files.outputs._2 }}
-            !*-release.apk
+            build/app/outputs/flutter-apk/app-arm64-v8a-debug.apk
+            build/app/outputs/flutter-apk/app-armeabi-v7a-debug.apk
+            build/app/outputs/flutter-apk/app-x86_64-debug.apk
 
-      - name: Build Changelog
-        id: changelog
-        uses: ardalanamini/auto-changelog@v3
-        with:
-          mention-authors: false
-          mention-new-contributors: false
-          include-compare: false
-          semver: false
 
-      - name: Find and Replace
-        uses: mad9000/actions-find-and-replace-string@5
-        id: signed_file_path_0
-        with:
-          source: ${{ steps.signed_files.outputs._0 }}
-          find: "/github/workspace/"
-          replace: ""
-
-      - name: Find and Replace
-        uses: mad9000/actions-find-and-replace-string@5
-        id: signed_file_path_1
-        with:
-          source: ${{ steps.signed_files.outputs._1 }}
-          find: "/github/workspace/"
-          replace: ""
-
-      - name: Find and Replace
-        uses: mad9000/actions-find-and-replace-string@5
-        id: signed_file_path_2
-        with:
-          source: ${{ steps.signed_files.outputs._2 }}
-          find: "/github/workspace/"
-          replace: ""
-
-      - name: Create Release
-        id: create_release
-        uses: ncipollo/release-action@v1.13.0
-        with:
-          artifacts: "${{ steps.signed_file_path_0.outputs.value }},${{ steps.signed_file_path_1.outputs.value }},${{ steps.signed_file_path_2.outputs.value }}"
-          body: ${{ steps.changelog.outputs.changelog }}
-          draft: true
-          name: Release ${{ github.ref_name }}
-          token: ${{ secrets.GITHUB_TOKEN }}
