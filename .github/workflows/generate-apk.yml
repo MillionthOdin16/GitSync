@@ -22,10 +22,8 @@ jobs:
 
       - name: Create Secrets file
         run: |
-          echo "Creating file with interpolated secrets"
-          cat <<EOF > ./lib/constant/secrets.dart
-          ${{ secrets.SECRETS }}
-          EOF
+          echo "Creating debug secrets file from template"
+          cp ./lib/constant/secrets.dart.template ./lib/constant/secrets.dart
 
       - name: Setup Flutter SDK
         uses: flutter-actions/setup-flutter@v4
