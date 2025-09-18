@@ -1,0 +1,63 @@
+name: Build with Fallback
+
+on:
+  push:
+    branches: [ main, develop ]
+  pull_request:
+    branches: [ main ]
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+      
+      - name: Setup Rust toolchain
+        uses: actions-rust-lang/setup-rust-toolchain@v1
+      
+      - name: Setup Java
+        uses: actions/setup-java@v4
+        with:
+          distribution: 'zulu'
+          java-version: '17'
+          cache: 'gradle'
+      
+      - name: Setup Flutter SDK
+        uses: flutter-actions/setup-flutter@v4
+        with:
+          channel: stable
+          version: 3.35.2
+      
+      - name: Setup Android NDK
+        uses: nttld/setup-ndk@v1
+        with:
+          ndk-version: r29-beta4
+      
+      - name: Accept Android licenses
+        uses: SimonMarquis/android-accept-licenses@v1
+      
+      - name: Create dummy secrets file
+        run: |
+          mkdir -p lib/constant
+          echo "// Dummy secrets for CI build
+          class Secrets {
+            static const String githubClientId = 'dummy';
+            static const String githubClientSecret = 'dummy';
+          }" > lib/constant/secrets.dart
+      
+      - name: Run build with fallback
+        run: |
+          ./build.sh
+          echo "Build completed successfully!"
+      
+      - name: Upload build artifacts
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: build-artifacts
+          path: |
+            build/app/outputs/flutter-apk/*.apk
+          retention-days: 7

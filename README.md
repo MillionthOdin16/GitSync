@@ -76,7 +76,65 @@ For support, email bugs.viscouspotential@gmail.com or create an issue in this re
 
 If you just want to try the app out, feel free to download a release from an official platform!
 
-_Build instructions coming soon..._
+### Quick Build
+
+The project includes automated build scripts that attempt a release build first and automatically fall back to debug mode if the release build fails:
+
+```bash
+# On Linux/macOS
+./build.sh
+
+# On Windows
+build.bat
+
+# Using Make (any platform)
+make build
+```
+
+### Build Options
+
+```bash
+# Clean build (removes all build artifacts first)
+./build.sh --clean
+
+# Force debug build (skip release attempt)
+./build.sh --debug
+
+# Using Make
+make clean          # Clean build artifacts
+make build-release  # Release build only
+make build-debug    # Debug build only
+make setup          # Setup development environment
+```
+
+### Manual Build
+
+If you prefer to build manually:
+
+1. **Setup Environment**
+   ```bash
+   # Install FVM (Flutter Version Manager) if not already installed
+   # Then install the required Flutter version
+   fvm install
+   fvm flutter pub get
+   ```
+
+2. **Install Rust Dependencies** (if building with Rust integration)
+   ```bash
+   cargo install flutter_rust_bridge_codegen
+   flutter_rust_bridge_codegen generate
+   ```
+
+3. **Build**
+   ```bash
+   # Release build (recommended)
+   fvm flutter build apk --release --split-per-abi
+   
+   # Debug build (fallback)
+   fvm flutter build apk --debug
+   ```
+
+The built APK files will be available in `build/app/outputs/flutter-apk/`.
 
 <!-- ### 1. Setup
 
