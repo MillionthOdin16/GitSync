@@ -6,7 +6,7 @@ import '../api/manager/settings_manager.dart';
 import '../gitsync_service.dart';
 
 // TODO: Must be false for release
-const demo = true;
+const demo = false;
 
 final repoManager = RepoManager();
 final uiSettingsManager = SettingsManager();

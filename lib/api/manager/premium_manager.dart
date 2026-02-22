@@ -17,9 +17,8 @@ class PremiumManager {
   }
 
   Future<bool> _readPremiumStatus() async {
-    return
-    // kDebugMode ||
-    await repoManager.getBool(StorageKey.repoman_hasGHSponsorPremium);
+    return true; // Premium unlocked for all users
+    // Original: await repoManager.getBool(StorageKey.repoman_hasGHSponsorPremium);
   }
 
   Future<void> updateGitHubSponsorPremium() async {

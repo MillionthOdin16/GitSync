@@ -1,0 +1,78 @@
+name: Build Unsigned APK
+
+on:
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Free Disk Space
+        uses: jlumbroso/free-disk-space@main
+        with:
+          android: false
+          dotnet: true
+          haskell: true
+          large-packages: true
+
+      - uses: actions/cache@v3
+        with:
+          path: |
+            ~/.cargo/registry
+            ~/.cargo/git
+            target
+          key: ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.lock') }}
+
+      - uses: actions/checkout@v3
+      - uses: actions-rust-lang/setup-rust-toolchain@v1
+
+      - name: Create Secrets file
+        run: |
+          echo "Creating file with interpolated secrets"
+          cat <<EOF > ./lib/constant/secrets.dart
+          ${{ secrets.SECRETS }}
+          EOF
+
+      - name: Setup Flutter SDK
+        uses: flutter-actions/setup-flutter@v4
+        with:
+          channel: stable
+          version: 3.35.2
+
+      - name: Set Up JDK
+        uses: actions/setup-java@v3
+        with:
+          distribution: "zulu"
+          java-version: "17"
+          cache: "gradle"
+
+      - name: Install flutter_rust_bridge_codegen
+        run: cargo install flutter_rust_bridge_codegen
+
+      - name: Install cargo-expand
+        run: cargo install cargo-expand
+
+      - name: Get Packages
+        run: flutter pub get
+
+      - name: Generate Rust
+        run: flutter_rust_bridge_codegen generate
+
+      - uses: nttld/setup-ndk@v1
+        with:
+          ndk-version: r29-beta4
+
+      - uses: SimonMarquis/android-accept-licenses@v1
+
+      - name: Build Unsigned APK
+        run: flutter build apk --release
+
+      - name: Upload APK
+        uses: actions/upload-artifact@v4
+        with:
+          name: gitsync-unsigned-apk
+          path: build/app/outputs/flutter-apk/app-release.apk
