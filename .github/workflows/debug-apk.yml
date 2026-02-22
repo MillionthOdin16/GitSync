@@ -1,0 +1,67 @@
+name: Debug APK Build
+
+on:
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v3
+      - uses: actions-rust-lang/setup-rust-toolchain@v1
+
+      - name: Create Secrets file
+        run: |
+          cat <<EOF > ./lib/constant/secrets.dart
+          const oauthRedirectUrl = "";
+          const gitHubClientId = "";
+          const gitHubClientSecret = "";
+          const gitHubAppClientId = "";
+          const gitHubAppClientSecret = "";
+          const giteaClientId = "";
+          const giteaClientSecret = "";
+          const gitlabClientId = "";
+          const gitlabClientSecret = "";
+          const gitHubSponsorsToken = "";
+          EOF
+
+      - name: Setup Flutter SDK
+        uses: flutter-actions/setup-flutter@v4
+        with:
+          channel: stable
+          version: 3.35.2
+
+      - name: Set Up JDK
+        uses: actions/setup-java@v3
+        with:
+          distribution: "zulu"
+          java-version: "17"
+
+      - name: Install flutter_rust_bridge_codegen
+        run: cargo install flutter_rust_bridge_codegen
+
+      - name: Install cargo-expand
+        run: cargo install cargo-expand
+
+      - name: Get Packages
+        run: flutter pub get
+
+      - name: Generate Rust
+        run: flutter_rust_bridge_codegen generate
+
+      - uses: nttld/setup-ndk@v1
+        with:
+          ndk-version: r29-beta4
+
+      - name: Build Debug APK
+        run: flutter build apk --debug
+
+      - name: Upload APK
+        uses: actions/upload-artifact@v4
+        with:
+          name: gitsync-debug.apk
+          path: build/app/outputs/flutter-apk/app-debug.apk
